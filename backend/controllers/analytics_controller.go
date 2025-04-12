@@ -176,6 +176,134 @@ func getEnrollmentTrends(db *gorm.DB, courseID uint) []map[string]interface{} {
 	return trends
 }
 
+// GetTestAnalytics возвращает аналитику по тесту (расширенная версия)
+func (ac *AnalyticsController) GetTestAnalytics(c *fiber.Ctx) error {
+	testID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return utils.BadRequest(c, "Invalid test ID")
+	}
+
+	// Проверяем существование теста
+	var test models.Test
+	if err := ac.DB.First(&test, testID).Error; err != nil {
+		return utils.NotFound(c, "Test not found")
+	}
+
+	// Параметры периода
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+
+	// Парсим даты или устанавливаем значения по умолчанию
+	var start, end time.Time
+	if startDate == "" {
+		start = time.Now().AddDate(0, -1, 0) // Последний месяц по умолчанию
+	} else {
+		start, err = time.Parse("2006-01-02", startDate)
+		if err != nil {
+			return utils.BadRequest(c, "Invalid start_date format. Use YYYY-MM-DD")
+		}
+	}
+
+	if endDate == "" {
+		end = time.Now()
+	} else {
+		end, err = time.Parse("2006-01-02", endDate)
+		if err != nil {
+			return utils.BadRequest(c, "Invalid end_date format. Use YYYY-MM-DD")
+		}
+	}
+
+	// Основные метрики
+	var metrics struct {
+		TotalAttempts     int64
+		UniqueUsers       int64
+		AvgScore          float64
+		AvgTimeSpent      float64
+		AvgCorrectAnswers float64
+		AvgWrongAnswers   float64
+	}
+
+	ac.DB.Model(&models.UserTestProgress{}).
+		Where("test_id = ? AND updated_at BETWEEN ? AND ?", testID, start, end).
+		Count(&metrics.TotalAttempts)
+
+	ac.DB.Model(&models.UserTestProgress{}).
+		Select("COUNT(DISTINCT user_id)").
+		Where("test_id = ? AND updated_at BETWEEN ? AND ?", testID, start, end).
+		Scan(&metrics.UniqueUsers)
+
+	ac.DB.Model(&models.UserTestProgress{}).
+		Select("AVG(score)").
+		Where("test_id = ? AND updated_at BETWEEN ? AND ?", testID, start, end).
+		Scan(&metrics.AvgScore)
+
+	ac.DB.Model(&models.UserTestProgress{}).
+		Select("AVG(time_spent)").
+		Where("test_id = ? AND updated_at BETWEEN ? AND ?", testID, start, end).
+		Scan(&metrics.AvgTimeSpent)
+
+	ac.DB.Model(&models.UserTestProgress{}).
+		Select("AVG(correct_answers)").
+		Where("test_id = ? AND updated_at BETWEEN ? AND ?", testID, start, end).
+		Scan(&metrics.AvgCorrectAnswers)
+
+	ac.DB.Model(&models.UserTestProgress{}).
+		Select("AVG(wrong_answers)").
+		Where("test_id = ? AND updated_at BETWEEN ? AND ?", testID, start, end).
+		Scan(&metrics.AvgWrongAnswers)
+
+	// Динамика по дням
+	var dailyStats []struct {
+		Date         string  `json:"date"`
+		Attempts     int     `json:"attempts"`
+		AvgScore     float64 `json:"avg_score"`
+		AvgTimeSpent float64 `json:"avg_time_spent"`
+	}
+
+	ac.DB.Raw(`
+        SELECT 
+            DATE(updated_at) as date,
+            COUNT(*) as attempts,
+            AVG(score) as avg_score,
+            AVG(time_spent) as avg_time_spent
+        FROM user_test_progress
+        WHERE test_id = ? AND updated_at BETWEEN ? AND ?
+        GROUP BY DATE(updated_at)
+        ORDER BY date
+    `, testID, start, end).Scan(&dailyStats)
+
+	// Анализ вопросов
+	var questionStats []struct {
+		QuestionID   uint    `json:"question_id"`
+		QuestionText string  `json:"question_text"`
+		CorrectRate  float64 `json:"correct_rate"`
+	}
+
+	ac.DB.Raw(`
+        SELECT 
+            q.id as question_id,
+            q.question as question_text,
+            COUNT(CASE WHEN utp.correct_answers > 0 THEN 1 END) * 100.0 / COUNT(*) as correct_rate
+        FROM test_questions q
+        LEFT JOIN user_test_progress utp ON utp.test_id = q.test_id
+        WHERE q.test_id = ? AND utp.updated_at BETWEEN ? AND ?
+        GROUP BY q.id, q.question
+        ORDER BY correct_rate ASC
+    `, testID, start, end).Scan(&questionStats)
+
+	return utils.Success(c, fiber.StatusOK, fiber.Map{
+		"test_id":    testID,
+		"test_title": test.Title,
+		"period": fiber.Map{
+			"start_date": start.Format("2006-01-02"),
+			"end_date":   end.Format("2006-01-02"),
+		},
+		"metrics":        metrics,
+		"daily_stats":    dailyStats,
+		"question_stats": questionStats,
+	})
+}
+
 // GetPlatformAnalytics возвращает аналитику по всей платформе (только для админов)
 func (ac *AnalyticsController) GetPlatformAnalytics(c *fiber.Ctx) error {
 	// Проверка прав администратора

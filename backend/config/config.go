@@ -18,7 +18,7 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Println("Error loading .env file, using environment variables")
 	}
@@ -30,7 +30,7 @@ func LoadConfig() (*Config, error) {
 		DBPassword: getEnv("DB_PASSWORD", "postgres"),
 		DBName:     getEnv("DB_NAME", "learning_platform"),
 		JWTSecret:  getEnv("JWT_SECRET", "secret"),
-		ServerPort: getEnv("SERVER_PORT", "8080"),
+		ServerPort: getEnv("SERVER_PORT", "6000"),
 	}, nil
 }
 

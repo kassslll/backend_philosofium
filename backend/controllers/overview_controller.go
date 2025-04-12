@@ -187,3 +187,71 @@ func (oc *OverviewController) getRecommendedCourses(userID uint) ([]map[string]i
 
 	return recommendations, nil
 }
+
+// SearchTests возвращает тесты по критериям поиска
+func (oc *OverviewController) SearchTests(c *fiber.Ctx) error {
+	search := c.Query("search")
+	group := c.Query("group")
+	sort := c.Query("sort", "popularity") // popularity, newest, rating
+
+	query := oc.DB.Model(&models.Test{}).Where("access_level = 'public'")
+
+	// Поиск по названию/описанию
+	if search != "" {
+		query = query.Where("title ILIKE ? OR short_desc ILIKE ? OR description ILIKE ?",
+			"%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+
+	// Фильтр по группе
+	if group != "" {
+		query = query.Where("recommended_for = ?", group)
+	}
+
+	// Сортировка
+	switch sort {
+	case "newest":
+		query = query.Order("created_at DESC")
+	case "rating":
+		query = query.Order("(SELECT AVG(rating) FROM test_comments WHERE test_id = tests.id) DESC")
+	default: // popularity
+		query = query.Order("(SELECT COUNT(*) FROM user_test_progress WHERE test_id = tests.id) DESC")
+	}
+
+	var tests []models.Test
+	if err := query.Find(&tests).Error; err != nil {
+		return utils.InternalServerError(c, "Failed to fetch tests")
+	}
+
+	// Формируем упрощенный ответ
+	var result []map[string]interface{}
+	for _, test := range tests {
+		// Получаем средний рейтинг
+		var avgRating float64
+		oc.DB.Model(&models.TestComment{}).
+			Select("COALESCE(AVG(rating), 0)").
+			Where("test_id = ?", test.ID).
+			Scan(&avgRating)
+
+		// Получаем количество участников
+		var attempts int64
+		oc.DB.Model(&models.UserTestProgress{}).
+			Where("test_id = ?", test.ID).
+			Count(&attempts)
+
+		result = append(result, map[string]interface{}{
+			"id":          test.ID,
+			"title":       test.Title,
+			"short_desc":  test.ShortDesc,
+			"difficulty":  test.Difficulty,
+			"recommended": test.RecommendedFor,
+			"university":  test.University,
+			"topic":       test.Topic,
+			"logo_url":    test.LogoURL,
+			"rating":      avgRating,
+			"attempts":    attempts,
+			"created_at":  test.CreatedAt,
+		})
+	}
+
+	return utils.Success(c, fiber.StatusOK, result)
+}
