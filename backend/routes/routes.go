@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"backend/config"
-	"backend/controllers"
-	"backend/middleware"
+	"project/backend/config"
+	"project/backend/controllers"
+	"project/backend/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -19,20 +19,10 @@ func SetupRoutes(app *fiber.App, db *gorm.DB, cfg *config.Config) {
 	authMiddleware := middleware.AuthMiddleware(cfg)
 	adminMiddleware := middleware.AdminMiddleware(cfg)
 
-	// User routes
-	userController := controllers.NewUserController(db, cfg)
-	app.Get("/api/user/profile", authMiddleware, userController.GetProfile)
-	app.Put("/api/user/profile", authMiddleware, userController.UpdateProfile)
-
 	// Progress routes
 	progressController := controllers.NewProgressController(db, cfg)
 	app.Get("/api/progress", authMiddleware, progressController.GetProgress)
 	app.Get("/api/progress/overview", authMiddleware, progressController.GetProgressOverview)
-
-	// Overview routes
-	overviewController := controllers.NewOverviewController(db, cfg)
-	app.Get("/api/overview/courses", authMiddleware, overviewController.SearchCourses)
-	app.Get("/api/overview/tests", authMiddleware, overviewController.SearchTests)
 
 	// Courses routes
 	coursesController := controllers.NewCoursesController(db, cfg)
@@ -70,4 +60,34 @@ func SetupRoutes(app *fiber.App, db *gorm.DB, cfg *config.Config) {
 	adminTests.Put("/:id/questions/:questionId", testsController.UpdateQuestion)
 	adminTests.Get("/:id/comments", testsController.GetTestComments)
 	adminTests.Put("/:id/settings", testsController.UpdateTestSettings)
+
+	// Comments routes
+	commentsController := controllers.NewCommentsController(db, cfg)
+	comments := app.Group("/api/comments", middleware.AuthMiddleware(cfg))
+	comments.Post("/course/:id", commentsController.AddCourseComment)
+	comments.Get("/course/:id", commentsController.GetCourseComments)
+
+	// User routes
+	userController := controllers.NewUserController(db, cfg)
+	user := app.Group("/api/user", middleware.AuthMiddleware(cfg))
+	user.Get("/profile", userController.GetProfile)
+	user.Put("/profile", userController.UpdateProfile)
+	user.Get("/courses", userController.GetUserCourses)
+	user.Get("/tests", userController.GetUserTests)
+	user.Get("/activity", userController.GetUserActivity)
+
+	// Analytics routes
+	analyticsController := controllers.NewAnalyticsController(db, cfg)
+	analytics := app.Group("/api/analytics", middleware.AuthMiddleware(cfg))
+	analytics.Get("/progress", analyticsController.GetUserProgressAnalytics)
+	analytics.Get("/course/:id", analyticsController.GetCourseAnalytics)
+	analytics.Get("/test/:id", analyticsController.GetTestAnalytics)
+	analytics.Get("/platform", analyticsController.GetPlatformAnalytics)
+
+	// Overview routes
+	overviewController := controllers.NewOverviewController(db, cfg)
+	overview := app.Group("/api/overview", middleware.AuthMiddleware(cfg))
+	overview.Get("/", overviewController.GetUserOverview)
+	overview.Get("/courses", overviewController.SearchCourses)
+	overview.Get("/tests", overviewController.SearchTests)
 }

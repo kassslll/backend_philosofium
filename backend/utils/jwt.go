@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"backend/config"
+	"project/backend/config"
 	"time"
 
 	"github.com/gofiber/fiber/v2"

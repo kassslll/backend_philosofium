@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"backend/config"
 	"fmt"
 	"log"
+	"project/backend/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

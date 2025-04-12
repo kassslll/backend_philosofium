@@ -6,7 +6,7 @@ type MonthlyProgress struct {
 	Month            time.Month
 	Year             int
 	StreakDays       int
-	CoursesCompleted int
+	CoursesCompleted int64
 	LoginFrequency   map[string]int // day -> count
 }
 

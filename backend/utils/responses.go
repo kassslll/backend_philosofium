@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -38,7 +40,7 @@ func Success(c *fiber.Ctx, status int, data interface{}, meta ...interface{}) er
 func Error(c *fiber.Ctx, status int, err error, details ...interface{}) error {
 	response := ErrorResponse{
 		Success: false,
-		Error:   fiber.ErrMessage[status],
+		Error:   http.StatusText(status),
 		Message: err.Error(),
 	}
 

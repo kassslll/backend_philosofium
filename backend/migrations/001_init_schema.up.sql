@@ -1,3 +1,58 @@
+-- Course Analytics
+CREATE TABLE course_analytics (
+    id SERIAL PRIMARY KEY,
+    course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    user_name VARCHAR(255),
+    lessons_completed INTEGER DEFAULT 0,
+    hours_spent FLOAT DEFAULT 0,
+    last_accessed VARCHAR(50),
+    completion_rate FLOAT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Test Analytics
+CREATE TABLE test_analytics (
+    id SERIAL PRIMARY KEY,
+    test_id INTEGER REFERENCES tests(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    user_name VARCHAR(255),
+    questions_answered INTEGER DEFAULT 0,
+    correct_answers INTEGER DEFAULT 0,
+    wrong_answers INTEGER DEFAULT 0,
+    score FLOAT DEFAULT 0,
+    attempt_number INTEGER DEFAULT 1,
+    time_spent FLOAT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Course Comments
+CREATE TABLE course_comments (
+    id SERIAL PRIMARY KEY,
+    course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    user_name VARCHAR(255),
+    user_image VARCHAR(255),
+    text TEXT,
+    rating INTEGER CHECK (rating >= 0 AND rating <= 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Course Comment Replies
+CREATE TABLE course_comment_replies (
+    id SERIAL PRIMARY KEY,
+    comment_id INTEGER REFERENCES course_comments(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    user_name VARCHAR(255),
+    user_image VARCHAR(255),
+    text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Пользователи
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,

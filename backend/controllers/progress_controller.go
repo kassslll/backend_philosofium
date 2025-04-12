@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"backend/backend/utils"
-	"backend/config"
-	"backend/models"
+	"project/backend/config"
+	"project/backend/models"
+	"project/backend/utils"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -37,7 +37,7 @@ func (pc *ProgressController) GetProgress(c *fiber.Ctx) error {
 		endOfMonth := startOfMonth.AddDate(0, 1, -1)
 
 		var streakDays int
-		var coursesCompleted int
+		var coursesCompleted int64
 		loginFrequency := make(map[string]int)
 
 		// Get streak days for the month

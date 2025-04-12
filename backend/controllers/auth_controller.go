@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"backend/config"
-	"backend/models"
-	"backend/utils"
 	"errors"
+	"project/backend/config"
+	"project/backend/models"
+	"project/backend/utils"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"

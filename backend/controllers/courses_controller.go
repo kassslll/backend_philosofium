@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"backend/backend/utils"
-	"backend/config"
-	"backend/models"
 	"errors"
+	"project/backend/config"
+	"project/backend/models"
+	"project/backend/utils"
 	"strconv"
 	"strings"
 	"time"

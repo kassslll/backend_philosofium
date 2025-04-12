@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"backend/config"
-	"backend/utils"
+	"project/backend/config"
+	"project/backend/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
