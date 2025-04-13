@@ -1,0 +1,138 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API for educational platform",
+        "title": "Learning Platform API",
+        "contact": {},
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:6000",
+    "basePath": "/api",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and return JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controllers.ErrorResponse": {
+            "description": "Standard error response format",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error message",
+                    "type": "string",
+                    "example": "Invalid credentials"
+                },
+                "message": {
+                    "description": "Additional message",
+                    "type": "string",
+                    "example": "Authentication failed"
+                }
+            }
+        },
+        "controllers.LoginRequest": {
+            "description": "User login request payload",
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "User's password",
+                    "type": "string",
+                    "example": "password123"
+                },
+                "username": {
+                    "description": "User's username",
+                    "type": "string",
+                    "example": "john_doe"
+                }
+            }
+        },
+        "controllers.LoginResponse": {
+            "description": "Authentication response with JWT token",
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "JWT token",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "user": {
+                    "description": "User information",
+                    "type": "object",
+                    "properties": {
+                        "email": {
+                            "description": "User email",
+                            "type": "string",
+                            "example": "john@example.com"
+                        },
+                        "id": {
+                            "description": "User ID",
+                            "type": "integer",
+                            "example": 1
+                        },
+                        "username": {
+                            "description": "Username",
+                            "type": "string",
+                            "example": "john_doe"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

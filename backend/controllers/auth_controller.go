@@ -13,6 +13,31 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// LoginRequest represents user login credentials
+// @Description User login request payload
+type LoginRequest struct {
+	Username string `json:"username" example:"john_doe"`    // User's username
+	Password string `json:"password" example:"password123"` // User's password
+}
+
+// LoginResponse represents successful login response
+// @Description Authentication response with JWT token
+type LoginResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."` // JWT token
+	User  struct {
+		ID       uint   `json:"id" example:"1"`                   // User ID
+		Username string `json:"username" example:"john_doe"`      // Username
+		Email    string `json:"email" example:"john@example.com"` // User email
+	} `json:"user"` // User information
+}
+
+// ErrorResponse represents error response
+// @Description Standard error response format
+type ErrorResponse struct {
+	Error   string `json:"error" example:"Invalid credentials"`               // Error message
+	Message string `json:"message,omitempty" example:"Authentication failed"` // Additional message
+}
+
 type AuthController struct {
 	DB  *gorm.DB
 	Cfg *config.Config
@@ -64,6 +89,18 @@ func (ac *AuthController) Register(c *fiber.Ctx) error {
 	})
 }
 
+// Login godoc
+// @Summary User login
+// @Description Authenticate user and return JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /auth/login [post]
 func (ac *AuthController) Login(c *fiber.Ctx) error {
 	type LoginInput struct {
 		Username string `json:"username"`

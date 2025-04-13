@@ -42,10 +42,10 @@ func setup() {
 		DBHost:     "localhost",
 		DBPort:     "5432",
 		DBUser:     "postgres",
-		DBPassword: "postgres",
+		DBPassword: "12345",
 		DBName:     "learning_platform_test",
 		JWTSecret:  "testsecret",
-		ServerPort: "8080",
+		ServerPort: "7000",
 	}
 
 	// Initialize database
