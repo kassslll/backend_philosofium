@@ -18,7 +18,18 @@ func NewOverviewController(db *gorm.DB, cfg *config.Config) *OverviewController 
 	return &OverviewController{DB: db, Cfg: cfg}
 }
 
-// SearchCourses возвращает курсы по критериям поиска
+// SearchCourses godoc
+// @Summary Search courses
+// @Description Search and filter public courses
+// @Tags overview
+// @Accept json
+// @Produce json
+// @Param search query string false "Search term"
+// @Param group query string false "Filter by group"
+// @Param sort query string false "Sort by (popularity|newest|rating)" default(popularity)
+// @Success 200 {array} map[string]interface{}
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /overview/courses [get]
 func (oc *OverviewController) SearchCourses(c *fiber.Ctx) error {
 	search := c.Query("search")
 	group := c.Query("group")
@@ -86,7 +97,17 @@ func (oc *OverviewController) SearchCourses(c *fiber.Ctx) error {
 	return utils.Success(c, fiber.StatusOK, result)
 }
 
-// GetUserOverview возвращает обзорную информацию для пользователя
+// GetUserOverview godoc
+// @Summary Get user overview
+// @Description Returns overview data for authenticated user
+// @Tags overview
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /overview [get]
 func (oc *OverviewController) GetUserOverview(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, oc.Cfg)
 	if err != nil {
@@ -188,7 +209,18 @@ func (oc *OverviewController) getRecommendedCourses(userID uint) ([]map[string]i
 	return recommendations, nil
 }
 
-// SearchTests возвращает тесты по критериям поиска
+// SearchTests godoc
+// @Summary Search tests
+// @Description Search and filter public tests
+// @Tags overview
+// @Accept json
+// @Produce json
+// @Param search query string false "Search term"
+// @Param group query string false "Filter by group"
+// @Param sort query string false "Sort by (popularity|newest|rating)" default(popularity)
+// @Success 200 {array} map[string]interface{}
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /overview/tests [get]
 func (oc *OverviewController) SearchTests(c *fiber.Ctx) error {
 	search := c.Query("search")
 	group := c.Query("group")

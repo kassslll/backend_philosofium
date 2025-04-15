@@ -23,6 +23,44 @@ func NewTestsController(db *gorm.DB, cfg *config.Config) *TestsController {
 	return &TestsController{DB: db, Cfg: cfg}
 }
 
+type TestRequest struct {
+	Title          string `json:"title" example:"Advanced Philosophy"`
+	ShortDesc      string `json:"short_desc" example:"Deep dive into philosophical concepts"`
+	Description    string `json:"description" example:"Comprehensive course covering..."`
+	Difficulty     string `json:"difficulty" example:"intermediate" enums:"beginner,intermediate,advanced"`
+	RecommendedFor string `json:"recommended_for" example:"Philosophy students"`
+	University     string `json:"university" example:"Harvard University"`
+	Topic          string `json:"topic" example:"Ethics"`
+	LogoURL        string `json:"logo_url" example:"https://example.com/logo.png"`
+}
+
+type QuizQuestionRequest struct {
+	Title         string   `json:"title" example:"Philosophy Basics"`
+	Description   string   `json:"description" example:"Test your knowledge"`
+	Question      string   `json:"question" example:"Who wrote 'Thus Spoke Zarathustra'?"`
+	Options       []string `json:"options" example:"Nietzsche,Kant,Plato,Aristotle"`
+	CorrectAnswer int      `json:"correct_answer" example:"0" minimum:"0"`
+	SequenceOrder int      `json:"sequence_order" example:"1" minimum:"1"`
+}
+
+type TestsAccessRequest struct {
+	AccessLevel     string `json:"access_level" example:"restricted" enums:"public,private,restricted"`
+	StartDate       string `json:"start_date" example:"2023-01-01" format:"date"`
+	EndDate         string `json:"end_date" example:"2023-12-31" format:"date"`
+	Admins          string `json:"admins" example:"admin1@example.com,admin2@example.com"`
+	AttemptsAllowed int    `json:"attempts_allowed" example:"3" minimum:"1"`
+}
+
+// GetUserTests godoc
+// @Summary Get user's tests
+// @Description Returns all tests the user has attempted
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Success 200 {array} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/my [get]
 func (tc *TestsController) GetUserTests(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -58,6 +96,18 @@ func (tc *TestsController) GetUserTests(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
+// GetAvailableTests godoc
+// @Summary Get available tests
+// @Description Returns all public tests available to the user
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param topic query string false "Filter by topic"
+// @Param university query string false "Filter by university"
+// @Success 200 {array} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/available [get]
 func (tc *TestsController) GetAvailableTests(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -105,6 +155,20 @@ func (tc *TestsController) GetAvailableTests(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
+// GetTestDetails godoc
+// @Summary Get test details
+// @Description Returns detailed information about a test
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id} [get]
 func (tc *TestsController) GetTestDetails(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -171,6 +235,22 @@ func (tc *TestsController) GetTestDetails(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateTestProgress godoc
+// @Summary Update test progress
+// @Description Updates user's progress in a test
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Param input body ProgressInput true "Test answers"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id}/progress [post]
 func (tc *TestsController) UpdateTestProgress(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -278,6 +358,20 @@ func (tc *TestsController) UpdateTestProgress(c *fiber.Ctx) error {
 	})
 }
 
+// GetTestAnalytics godoc
+// @Summary Get test analytics
+// @Description Returns analytics for a test (author/admin only)
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id}/analytics [get]
 func (tc *TestsController) GetTestAnalytics(c *fiber.Ctx) error {
 	testID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -315,6 +409,19 @@ func (tc *TestsController) GetTestAnalytics(c *fiber.Ctx) error {
 	})
 }
 
+// CreateTest godoc
+// @Summary Create a new test
+// @Description Creates a new test (author/admin only)
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param test body models.Test true "Test data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests [post]
 func (tc *TestsController) CreateTest(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -359,6 +466,22 @@ func (tc *TestsController) CreateTest(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateTestDescription godoc
+// @Summary Update test description
+// @Description Updates test metadata (author/admin only)
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Param input body TestRequest true "Test update data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id} [put]
 func (tc *TestsController) UpdateTestDescription(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -448,6 +571,22 @@ func (tc *TestsController) UpdateTestDescription(c *fiber.Ctx) error {
 	})
 }
 
+// AddQuestion godoc
+// @Summary Add question to test
+// @Description Adds a new question to a test (author/admin only)
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Param input body QuizQuestionRequest true "Question data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id}/questions [post]
 func (tc *TestsController) AddQuestion(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -537,6 +676,23 @@ func (tc *TestsController) AddQuestion(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateQuestion godoc
+// @Summary Update question
+// @Description Updates question content (author/admin only)
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Param questionId path int true "Question ID"
+// @Param input body TestsAccessRequest true "Question update data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id}/questions/{questionId} [put]
 func (tc *TestsController) UpdateQuestion(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -643,6 +799,17 @@ func (tc *TestsController) UpdateQuestion(c *fiber.Ctx) error {
 	})
 }
 
+// GetTestComments godoc
+// @Summary Get test comments
+// @Description Returns all comments for a test
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Success 200 {array} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /tests/{id}/comments [get]
 func (tc *TestsController) GetTestComments(c *fiber.Ctx) error {
 	testID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -661,6 +828,22 @@ func (tc *TestsController) GetTestComments(c *fiber.Ctx) error {
 	return c.JSON(comments)
 }
 
+// UpdateTestSettings godoc
+// @Summary Update test settings
+// @Description Updates test access settings (author/admin only)
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Param input body TestsAccessRequest true "Settings data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id}/settings [put]
 func (tc *TestsController) UpdateTestSettings(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {
@@ -738,6 +921,20 @@ func (tc *TestsController) UpdateTestSettings(c *fiber.Ctx) error {
 	})
 }
 
+// GetTestResult godoc
+// @Summary Get test result
+// @Description Returns detailed results for a completed test
+// @Tags tests
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /tests/{id}/result [get]
 func (tc *TestsController) GetTestResult(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, tc.Cfg)
 	if err != nil {

@@ -8,12 +8,12 @@ import (
 
 type User struct {
 	gorm.Model
-	Username     string `gorm:"unique;not null"`
-	Email        string `gorm:"unique;not null"`
-	PasswordHash string `gorm:"not null"`
-	Role         string `gorm:"default:user"` // user, admin
-	Group        string
-	University   string
+	Username     string `gorm:"unique;not null" json:"username" example:"john_doe"`
+	Email        string `gorm:"unique;not null" json:"email" example:"user@example.com" format:"email"`
+	PasswordHash string `gorm:"not null" json:"password" example:"password"`
+	Role         string `gorm:"default:user" json:"role" example:"user" enums:"user,admin"`
+	Group        string `json:"group,omitempty" example:"philosophy_students"`
+	University   string `json:"university,omitempty" example:"Harvard University"`
 }
 
 type UserProgress struct {

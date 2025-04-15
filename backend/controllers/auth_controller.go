@@ -13,31 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// LoginRequest represents user login credentials
-// @Description User login request payload
-type LoginRequest struct {
-	Username string `json:"username" example:"john_doe"`    // User's username
-	Password string `json:"password" example:"password123"` // User's password
-}
-
-// LoginResponse represents successful login response
-// @Description Authentication response with JWT token
-type LoginResponse struct {
-	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."` // JWT token
-	User  struct {
-		ID       uint   `json:"id" example:"1"`                   // User ID
-		Username string `json:"username" example:"john_doe"`      // Username
-		Email    string `json:"email" example:"john@example.com"` // User email
-	} `json:"user"` // User information
-}
-
-// ErrorResponse represents error response
-// @Description Standard error response format
-type ErrorResponse struct {
-	Error   string `json:"error" example:"Invalid credentials"`               // Error message
-	Message string `json:"message,omitempty" example:"Authentication failed"` // Additional message
-}
-
 type AuthController struct {
 	DB  *gorm.DB
 	Cfg *config.Config
@@ -47,6 +22,17 @@ func NewAuthController(db *gorm.DB, cfg *config.Config) *AuthController {
 	return &AuthController{DB: db, Cfg: cfg}
 }
 
+// [+] Register godoc
+// @Summary Register a new user
+// @Description Creates a new user account
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User registration data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /auth/register [post]
 func (ac *AuthController) Register(c *fiber.Ctx) error {
 	var user models.User
 	if err := c.BodyParser(&user); err != nil {
@@ -67,7 +53,8 @@ func (ac *AuthController) Register(c *fiber.Ctx) error {
 	// Create user
 	if err := ac.DB.Create(&user).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Could not create user",
+			"error":   "Could not create user",
+			"message": err,
 		})
 	}
 
@@ -89,17 +76,17 @@ func (ac *AuthController) Register(c *fiber.Ctx) error {
 	})
 }
 
-// Login godoc
+// [+] Login godoc
 // @Summary User login
 // @Description Authenticate user and return JWT token
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body LoginRequest true "Login credentials"
-// @Success 200 {object} LoginResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Param request body map[string]interface{} true "Login credentials"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /auth/login [post]
 func (ac *AuthController) Login(c *fiber.Ctx) error {
 	type LoginInput struct {

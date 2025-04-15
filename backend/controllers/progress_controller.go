@@ -19,6 +19,16 @@ func NewProgressController(db *gorm.DB, cfg *config.Config) *ProgressController 
 	return &ProgressController{DB: db, Cfg: cfg}
 }
 
+// GetProgress godoc
+// @Summary Get user progress
+// @Description Returns user's progress data for last 4 months
+// @Tags progress
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /progress [get]
 func (pc *ProgressController) GetProgress(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, pc.Cfg)
 	if err != nil {
@@ -75,6 +85,16 @@ func (pc *ProgressController) GetProgress(c *fiber.Ctx) error {
 	})
 }
 
+// GetProgressOverview godoc
+// @Summary Get progress overview
+// @Description Returns summary of user's progress
+// @Tags progress
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /progress/overview [get]
 func (pc *ProgressController) GetProgressOverview(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, pc.Cfg)
 	if err != nil {

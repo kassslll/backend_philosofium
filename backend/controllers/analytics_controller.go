@@ -20,7 +20,20 @@ func NewAnalyticsController(db *gorm.DB, cfg *config.Config) *AnalyticsControlle
 	return &AnalyticsController{DB: db, Cfg: cfg}
 }
 
-// GetUserProgressAnalytics возвращает аналитику прогресса пользователя
+// GetUserProgressAnalytics godoc
+// @Summary Get user progress analytics
+// @Description Returns analytics data for user progress within a specified period
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Param start_date query string false "Start date in YYYY-MM-DD format"
+// @Param end_date query string false "End date in YYYY-MM-DD format"
+// @Success 200 {object} map[string]interface{} "Example: {'course_progress': [...], 'test_progress': [...], 'login_history': [...]}"
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /analytics/progress [get]
 func (ac *AnalyticsController) GetUserProgressAnalytics(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, ac.Cfg)
 	if err != nil {
@@ -84,7 +97,21 @@ func (ac *AnalyticsController) GetUserProgressAnalytics(c *fiber.Ctx) error {
 	})
 }
 
-// GetCourseAnalytics возвращает аналитику по курсу
+// GetCourseAnalytics godoc
+// @Summary Get course analytics
+// @Description Returns analytics data for a specific course (only for course authors/admins)
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /analytics/courses/{id} [get]
 func (ac *AnalyticsController) GetCourseAnalytics(c *fiber.Ctx) error {
 	courseID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -176,7 +203,22 @@ func getEnrollmentTrends(db *gorm.DB, courseID uint) []map[string]interface{} {
 	return trends
 }
 
-// GetTestAnalytics возвращает аналитику по тесту (расширенная версия)
+// GetTestAnalytics godoc
+// @Summary Get test analytics
+// @Description Returns detailed analytics for a specific test
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Param id path int true "Test ID"
+// @Param start_date query string false "Start date in YYYY-MM-DD format"
+// @Param end_date query string false "End date in YYYY-MM-DD format"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /analytics/tests/{id} [get]
 func (ac *AnalyticsController) GetTestAnalytics(c *fiber.Ctx) error {
 	testID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -304,7 +346,18 @@ func (ac *AnalyticsController) GetTestAnalytics(c *fiber.Ctx) error {
 	})
 }
 
-// GetPlatformAnalytics возвращает аналитику по всей платформе (только для админов)
+// GetPlatformAnalytics godoc
+// @Summary Get platform analytics
+// @Description Returns platform-wide analytics (admin only)
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /analytics/platform [get]
 func (ac *AnalyticsController) GetPlatformAnalytics(c *fiber.Ctx) error {
 	// Проверка прав администратора
 	userID, err := utils.ExtractUserIDFromToken(c, ac.Cfg)

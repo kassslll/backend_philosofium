@@ -21,7 +21,26 @@ func NewUserController(db *gorm.DB, cfg *config.Config) *UserController {
 	return &UserController{DB: db, Cfg: cfg}
 }
 
-// GetProfile возвращает профиль пользователя
+type UpdateUserRequest struct {
+	Username    string `json:"username" example:"john_doe" minLength:"3" maxLength:"20"`
+	Email       string `json:"email" example:"user@example.com" format:"email"`
+	OldPassword string `json:"old_password" example:"oldPassword123" minLength:"8"`
+	NewPassword string `json:"new_password" example:"newPassword123" minLength:"8"`
+	Group       string `json:"group" example:"students" enums:"students,professors,admins"`
+	University  string `json:"university" example:"Stanford University"`
+}
+
+// GetProfile godoc
+// @Summary Get user profile
+// @Description Returns authenticated user's profile data
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /users/profile [get]
 func (uc *UserController) GetProfile(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, uc.Cfg)
 	if err != nil {
@@ -59,7 +78,20 @@ func (uc *UserController) GetProfile(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateProfile обновляет профиль пользователя
+// UpdateProfile godoc
+// @Summary Update user profile
+// @Description Updates authenticated user's profile data
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param input body UpdateUserRequest true "Profile update data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /users/profile [put]
 func (uc *UserController) UpdateProfile(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, uc.Cfg)
 	if err != nil {
@@ -145,6 +177,21 @@ func (uc *UserController) UpdateProfile(c *fiber.Ctx) error {
 	})
 }
 
+// GetUserCourses godoc
+// @Summary Get user's courses
+// @Description Returns paginated list of user's courses with progress
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param status query string false "Filter by status (all|in_progress|completed)" default(all)
+// @Param search query string false "Search term"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Success 200 {object} utils.PaginatedResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /users/courses [get]
 func (uc *UserController) GetUserCourses(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, uc.Cfg)
 	if err != nil {
@@ -210,6 +257,21 @@ func (uc *UserController) GetUserCourses(c *fiber.Ctx) error {
 	return utils.Paginate(c, courses, total, page, pageSize)
 }
 
+// GetUserTests godoc
+// @Summary Get user's tests
+// @Description Returns paginated list of user's tests with progress
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param status query string false "Filter by status (all|in_progress|completed)" default(all)
+// @Param search query string false "Search term"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Success 200 {object} utils.PaginatedResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /users/tests [get]
 func (uc *UserController) GetUserTests(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, uc.Cfg)
 	if err != nil {
@@ -271,7 +333,18 @@ func (uc *UserController) GetUserTests(c *fiber.Ctx) error {
 	return utils.Paginate(c, tests, total, page, pageSize)
 }
 
-// GetUserActivity возвращает активность пользователя
+// GetUserActivity godoc
+// @Summary Get user activity
+// @Description Returns user's recent activity data
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param days query int false "Number of days to look back" default(7)
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /users/activity [get]
 func (uc *UserController) GetUserActivity(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, uc.Cfg)
 	if err != nil {

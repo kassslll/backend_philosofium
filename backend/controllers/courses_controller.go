@@ -18,10 +18,57 @@ type CoursesController struct {
 	Cfg *config.Config
 }
 
+type ProgressInput struct {
+	LessonID      uint    `json:"lesson_id"`
+	HoursSpent    float64 `json:"hours_spent"`
+	MarkCompleted bool    `json:"mark_completed"`
+}
+
+type UpdateCourseRequest struct {
+	Title          string `json:"title"`
+	ShortDesc      string `json:"short_desc"`
+	Description    string `json:"description"`
+	Difficulty     string `json:"difficulty"`
+	RecommendedFor string `json:"recommended_for"`
+	University     string `json:"university"`
+	Topic          string `json:"topic"`
+	LogoURL        string `json:"logo_url"`
+}
+
+type CreateLessonRequest struct {
+	Title       string `json:"title" validate:"required,min=3,max=100"`
+	Description string `json:"description" validate:"required,max=500"`
+	Content     string `json:"content" validate:"required"`
+}
+
+type UpdateLessonRequest struct {
+	Title         string `json:"title" example:"Introduction to Philosophy"`
+	Description   string `json:"description" example:"Basic concepts"`
+	Content       string `json:"content" example:"<p>Lesson content</p>"`
+	SequenceOrder int    `json:"sequence_order" example:"1"`
+}
+
+type CourseAccessRequest struct {
+	AccessLevel string   `json:"access_level" validate:"required,oneof=public private restricted"`
+	StartDate   string   `json:"start_date" validate:"required,datetime=2006-01-02"`
+	EndDate     string   `json:"end_date" validate:"required,datetime=2006-01-02,gtfield=StartDate"`
+	Admins      []string `json:"admins" validate:"dive,email"`
+}
+
 func NewCoursesController(db *gorm.DB, cfg *config.Config) *CoursesController {
 	return &CoursesController{DB: db, Cfg: cfg}
 }
 
+// GetUserCourses godoc
+// @Summary Get user's enrolled courses
+// @Description Returns all courses the user is enrolled in
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Success 200 {array} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/my [get]
 func (cc *CoursesController) GetUserCourses(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -55,6 +102,18 @@ func (cc *CoursesController) GetUserCourses(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
+// GetAvailableCourses godoc
+// @Summary Get available courses
+// @Description Returns all public courses available to the user
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param topic query string false "Filter by topic"
+// @Param university query string false "Filter by university"
+// @Success 200 {array} map[string]interface{}
+// @Failure 401 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/available [get]
 func (cc *CoursesController) GetAvailableCourses(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -102,6 +161,20 @@ func (cc *CoursesController) GetAvailableCourses(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
+// GetCourseDetails godoc
+// @Summary Get course details
+// @Description Returns detailed information about a course
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id} [get]
 func (cc *CoursesController) GetCourseDetails(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -152,6 +225,21 @@ func (cc *CoursesController) GetCourseDetails(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateCourseProgress godoc
+// @Summary Update course progress
+// @Description Updates user's progress in a course
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Param input body ProgressInput true "Progress data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id}/progress [post]
 func (cc *CoursesController) UpdateCourseProgress(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -165,12 +253,6 @@ func (cc *CoursesController) UpdateCourseProgress(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid course ID",
 		})
-	}
-
-	type ProgressInput struct {
-		LessonID      uint    `json:"lesson_id"`
-		HoursSpent    float64 `json:"hours_spent"`
-		MarkCompleted bool    `json:"mark_completed"`
 	}
 
 	var input ProgressInput
@@ -229,6 +311,20 @@ func (cc *CoursesController) UpdateCourseProgress(c *fiber.Ctx) error {
 	})
 }
 
+// GetCourseAnalytics godoc
+// @Summary Get course analytics
+// @Description Returns analytics for a course (author/admin only)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id}/analytics [get]
 func (cc *CoursesController) GetCourseAnalytics(c *fiber.Ctx) error {
 	courseID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -265,6 +361,19 @@ func (cc *CoursesController) GetCourseAnalytics(c *fiber.Ctx) error {
 	})
 }
 
+// CreateCourse godoc
+// @Summary Create a new course
+// @Description Creates a new course (author/admin only)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param course body models.Course true "Course data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses [post]
 func (cc *CoursesController) CreateCourse(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -308,6 +417,22 @@ func (cc *CoursesController) CreateCourse(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateCourseDescription godoc
+// @Summary Update course description
+// @Description Updates course metadata (author/admin only)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Param input body UpdateCourseRequest true "Course update data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id} [put]
 func (cc *CoursesController) UpdateCourseDescription(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -397,6 +522,22 @@ func (cc *CoursesController) UpdateCourseDescription(c *fiber.Ctx) error {
 	})
 }
 
+// AddLesson godoc
+// @Summary Add lesson to course
+// @Description Adds a new lesson to a course (author/admin only)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Param input body CreateLessonRequest true "Lesson data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id}/lessons [post]
 func (cc *CoursesController) AddLesson(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -412,11 +553,7 @@ func (cc *CoursesController) AddLesson(c *fiber.Ctx) error {
 		})
 	}
 
-	var input struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Content     string `json:"content"`
-	}
+	var input CreateLessonRequest
 
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -467,6 +604,23 @@ func (cc *CoursesController) AddLesson(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateLesson godoc
+// @Summary Update lesson
+// @Description Updates lesson content (author/admin only)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Param lessonId path int true "Lesson ID"
+// @Param input body UpdateLessonRequest true "Lesson update data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id}/lessons/{lessonId} [put]
 func (cc *CoursesController) UpdateLesson(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {
@@ -559,6 +713,17 @@ func (cc *CoursesController) UpdateLesson(c *fiber.Ctx) error {
 	})
 }
 
+// GetCourseComments godoc
+// @Summary Get course comments
+// @Description Returns all comments for a course
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Success 200 {array} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /courses/{id}/comments [get]
 func (cc *CoursesController) GetCourseComments(c *fiber.Ctx) error {
 	courseID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -577,6 +742,22 @@ func (cc *CoursesController) GetCourseComments(c *fiber.Ctx) error {
 	return c.JSON(comments)
 }
 
+// UpdateCourseSettings godoc
+// @Summary Update course settings
+// @Description Updates course access settings (author/admin only)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path int true "Course ID"
+// @Param input body CourseAccessRequest true "Settings data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 403 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /courses/{id}/settings [put]
 func (cc *CoursesController) UpdateCourseSettings(c *fiber.Ctx) error {
 	userID, err := utils.ExtractUserIDFromToken(c, cc.Cfg)
 	if err != nil {

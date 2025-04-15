@@ -1,54 +1,240 @@
 basePath: /api
 definitions:
-  controllers.ErrorResponse:
-    description: Standard error response format
+  controllers.AddCommentRequest:
     properties:
-      error:
-        description: Error message
-        example: Invalid credentials
-        type: string
-      message:
-        description: Additional message
-        example: Authentication failed
+      rating:
+        example: 5
+        maximum: 5
+        minimum: 0
+        type: integer
+      text:
+        example: This course was amazing!
         type: string
     type: object
-  controllers.LoginRequest:
-    description: User login request payload
+  controllers.CourseAccessRequest:
     properties:
-      password:
-        description: User's password
-        example: password123
+      access_level:
+        enum:
+        - public
+        - private
+        - restricted
+        type: string
+      admins:
+        items:
+          type: string
+        type: array
+      end_date:
+        type: string
+      start_date:
+        type: string
+    required:
+    - access_level
+    - end_date
+    - start_date
+    type: object
+  controllers.CreateLessonRequest:
+    properties:
+      content:
+        type: string
+      description:
+        maxLength: 500
+        type: string
+      title:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - content
+    - description
+    - title
+    type: object
+  controllers.ProgressInput:
+    properties:
+      hours_spent:
+        type: number
+      lesson_id:
+        type: integer
+      mark_completed:
+        type: boolean
+    type: object
+  controllers.QuizQuestionRequest:
+    properties:
+      correct_answer:
+        example: 0
+        minimum: 0
+        type: integer
+      description:
+        example: Test your knowledge
+        type: string
+      options:
+        example:
+        - Nietzsche
+        - Kant
+        - Plato
+        - Aristotle
+        items:
+          type: string
+        type: array
+      question:
+        example: Who wrote 'Thus Spoke Zarathustra'?
+        type: string
+      sequence_order:
+        example: 1
+        minimum: 1
+        type: integer
+      title:
+        example: Philosophy Basics
+        type: string
+    type: object
+  controllers.TestRequest:
+    properties:
+      description:
+        example: Comprehensive course covering...
+        type: string
+      difficulty:
+        enum:
+        - beginner
+        - intermediate
+        - advanced
+        example: intermediate
+        type: string
+      logo_url:
+        example: https://example.com/logo.png
+        type: string
+      recommended_for:
+        example: Philosophy students
+        type: string
+      short_desc:
+        example: Deep dive into philosophical concepts
+        type: string
+      title:
+        example: Advanced Philosophy
+        type: string
+      topic:
+        example: Ethics
+        type: string
+      university:
+        example: Harvard University
+        type: string
+    type: object
+  controllers.TestsAccessRequest:
+    properties:
+      access_level:
+        enum:
+        - public
+        - private
+        - restricted
+        example: restricted
+        type: string
+      admins:
+        example: admin1@example.com,admin2@example.com
+        type: string
+      attempts_allowed:
+        example: 3
+        minimum: 1
+        type: integer
+      end_date:
+        example: "2023-12-31"
+        format: date
+        type: string
+      start_date:
+        example: "2023-01-01"
+        format: date
+        type: string
+    type: object
+  controllers.UpdateCourseRequest:
+    properties:
+      description:
+        type: string
+      difficulty:
+        type: string
+      logo_url:
+        type: string
+      recommended_for:
+        type: string
+      short_desc:
+        type: string
+      title:
+        type: string
+      topic:
+        type: string
+      university:
+        type: string
+    type: object
+  controllers.UpdateLessonRequest:
+    properties:
+      content:
+        example: <p>Lesson content</p>
+        type: string
+      description:
+        example: Basic concepts
+        type: string
+      sequence_order:
+        example: 1
+        type: integer
+      title:
+        example: Introduction to Philosophy
+        type: string
+    type: object
+  controllers.UpdateUserRequest:
+    properties:
+      email:
+        example: user@example.com
+        format: email
+        type: string
+      group:
+        enum:
+        - students
+        - professors
+        - admins
+        example: students
+        type: string
+      new_password:
+        example: newPassword123
+        minLength: 8
+        type: string
+      old_password:
+        example: oldPassword123
+        minLength: 8
+        type: string
+      university:
+        example: Stanford University
         type: string
       username:
-        description: User's username
         example: john_doe
+        maxLength: 20
+        minLength: 3
         type: string
     type: object
-  controllers.LoginResponse:
-    description: Authentication response with JWT token
+  models.Course:
+    type: object
+  models.Test:
+    type: object
+  models.User:
+    type: object
+  utils.ErrorResponse:
     properties:
-      token:
-        description: JWT token
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      details: {}
+      error:
         type: string
-      user:
-        description: User information
-        properties:
-          email:
-            description: User email
-            example: john@example.com
-            type: string
-          id:
-            description: User ID
-            example: 1
-            type: integer
-          username:
-            description: Username
-            example: john_doe
-            type: string
-        type: object
+      message:
+        type: string
+      success:
+        type: boolean
     type: object
-host: localhost:6000
+  utils.PaginatedResponse:
+    properties:
+      data: {}
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+host: localhost:3000
 info:
   contact: {}
   description: API for educational platform
@@ -58,6 +244,168 @@ info:
   title: Learning Platform API
   version: "1.0"
 paths:
+  /analytics/courses/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns analytics data for a specific course (only for course authors/admins)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get course analytics
+      tags:
+      - analytics
+  /analytics/platform:
+    get:
+      consumes:
+      - application/json
+      description: Returns platform-wide analytics (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get platform analytics
+      tags:
+      - analytics
+  /analytics/progress:
+    get:
+      consumes:
+      - application/json
+      description: Returns analytics data for user progress within a specified period
+      parameters:
+      - description: Start date in YYYY-MM-DD format
+        in: query
+        name: start_date
+        type: string
+      - description: End date in YYYY-MM-DD format
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Example: {''course_progress'': [...], ''test_progress'': [...],
+            ''login_history'': [...]}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user progress analytics
+      tags:
+      - analytics
+  /analytics/tests/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns detailed analytics for a specific test
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Start date in YYYY-MM-DD format
+        in: query
+        name: start_date
+        type: string
+      - description: End date in YYYY-MM-DD format
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get test analytics
+      tags:
+      - analytics
   /auth/login:
     post:
       consumes:
@@ -69,29 +417,1393 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/controllers.LoginRequest'
+          additionalProperties: true
+          type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.LoginResponse'
+            additionalProperties: true
+            type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: User login
       tags:
       - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
+  /courses:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new course (author/admin only)
+      parameters:
+      - description: Course data
+        in: body
+        name: course
+        required: true
+        schema:
+          $ref: '#/definitions/models.Course'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new course
+      tags:
+      - courses
+  /courses/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns detailed information about a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get course details
+      tags:
+      - courses
+    put:
+      consumes:
+      - application/json
+      description: Updates course metadata (author/admin only)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Course update data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update course description
+      tags:
+      - courses
+  /courses/{id}/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Returns analytics for a course (author/admin only)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get course analytics
+      tags:
+      - courses
+  /courses/{id}/comments:
+    get:
+      consumes:
+      - application/json
+      description: Returns all comments for a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get course comments
+      tags:
+      - courses
+    post:
+      consumes:
+      - application/json
+      description: Adds a comment with rating to a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Comment data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AddCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add comment to course
+      tags:
+      - comments
+  /courses/{id}/lessons:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new lesson to a course (author/admin only)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Lesson data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateLessonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add lesson to course
+      tags:
+      - courses
+  /courses/{id}/lessons/{lessonId}:
+    put:
+      consumes:
+      - application/json
+      description: Updates lesson content (author/admin only)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: integer
+      - description: Lesson update data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateLessonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update lesson
+      tags:
+      - courses
+  /courses/{id}/progress:
+    post:
+      consumes:
+      - application/json
+      description: Updates user's progress in a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Progress data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.ProgressInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update course progress
+      tags:
+      - courses
+  /courses/{id}/settings:
+    put:
+      consumes:
+      - application/json
+      description: Updates course access settings (author/admin only)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Settings data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CourseAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update course settings
+      tags:
+      - courses
+  /courses/available:
+    get:
+      consumes:
+      - application/json
+      description: Returns all public courses available to the user
+      parameters:
+      - description: Filter by topic
+        in: query
+        name: topic
+        type: string
+      - description: Filter by university
+        in: query
+        name: university
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get available courses
+      tags:
+      - courses
+  /courses/my:
+    get:
+      consumes:
+      - application/json
+      description: Returns all courses the user is enrolled in
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user's enrolled courses
+      tags:
+      - courses
+  /overview:
+    get:
+      consumes:
+      - application/json
+      description: Returns overview data for authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user overview
+      tags:
+      - overview
+  /overview/courses:
+    get:
+      consumes:
+      - application/json
+      description: Search and filter public courses
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Filter by group
+        in: query
+        name: group
+        type: string
+      - default: popularity
+        description: Sort by (popularity|newest|rating)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Search courses
+      tags:
+      - overview
+  /overview/tests:
+    get:
+      consumes:
+      - application/json
+      description: Search and filter public tests
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Filter by group
+        in: query
+        name: group
+        type: string
+      - default: popularity
+        description: Sort by (popularity|newest|rating)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Search tests
+      tags:
+      - overview
+  /progress:
+    get:
+      consumes:
+      - application/json
+      description: Returns user's progress data for last 4 months
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user progress
+      tags:
+      - progress
+  /progress/overview:
+    get:
+      consumes:
+      - application/json
+      description: Returns summary of user's progress
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get progress overview
+      tags:
+      - progress
+  /tests:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new test (author/admin only)
+      parameters:
+      - description: Test data
+        in: body
+        name: test
+        required: true
+        schema:
+          $ref: '#/definitions/models.Test'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new test
+      tags:
+      - tests
+  /tests/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns detailed information about a test
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get test details
+      tags:
+      - tests
+    put:
+      consumes:
+      - application/json
+      description: Updates test metadata (author/admin only)
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Test update data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.TestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update test description
+      tags:
+      - tests
+  /tests/{id}/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Returns analytics for a test (author/admin only)
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get test analytics
+      tags:
+      - tests
+  /tests/{id}/comments:
+    get:
+      consumes:
+      - application/json
+      description: Returns all comments for a test
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get test comments
+      tags:
+      - tests
+  /tests/{id}/progress:
+    post:
+      consumes:
+      - application/json
+      description: Updates user's progress in a test
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Test answers
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.ProgressInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update test progress
+      tags:
+      - tests
+  /tests/{id}/questions:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new question to a test (author/admin only)
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Question data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.QuizQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add question to test
+      tags:
+      - tests
+  /tests/{id}/questions/{questionId}:
+    put:
+      consumes:
+      - application/json
+      description: Updates question content (author/admin only)
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: integer
+      - description: Question update data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.TestsAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update question
+      tags:
+      - tests
+  /tests/{id}/result:
+    get:
+      consumes:
+      - application/json
+      description: Returns detailed results for a completed test
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get test result
+      tags:
+      - tests
+  /tests/{id}/settings:
+    put:
+      consumes:
+      - application/json
+      description: Updates test access settings (author/admin only)
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Settings data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.TestsAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update test settings
+      tags:
+      - tests
+  /tests/available:
+    get:
+      consumes:
+      - application/json
+      description: Returns all public tests available to the user
+      parameters:
+      - description: Filter by topic
+        in: query
+        name: topic
+        type: string
+      - description: Filter by university
+        in: query
+        name: university
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get available tests
+      tags:
+      - tests
+  /tests/my:
+    get:
+      consumes:
+      - application/json
+      description: Returns all tests the user has attempted
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user's tests
+      tags:
+      - tests
+  /users/activity:
+    get:
+      consumes:
+      - application/json
+      description: Returns user's recent activity data
+      parameters:
+      - default: 7
+        description: Number of days to look back
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user activity
+      tags:
+      - users
+  /users/courses:
+    get:
+      consumes:
+      - application/json
+      description: Returns paginated list of user's courses with progress
+      parameters:
+      - default: all
+        description: Filter by status (all|in_progress|completed)
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.PaginatedResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user's courses
+      tags:
+      - users
+  /users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Returns authenticated user's profile data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Updates authenticated user's profile data
+      parameters:
+      - description: Profile update data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user profile
+      tags:
+      - users
+  /users/tests:
+    get:
+      consumes:
+      - application/json
+      description: Returns paginated list of user's tests with progress
+      parameters:
+      - default: all
+        description: Filter by status (all|in_progress|completed)
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.PaginatedResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user's tests
+      tags:
+      - users
 schemes:
 - http
 swagger: "2.0"
